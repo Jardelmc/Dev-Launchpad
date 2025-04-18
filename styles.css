@@ -530,3 +530,35 @@ button:disabled {
 .hidden {
   display: none !important;
 }
+
+.terminal-output {
+  overflow-y: auto !important;
+  max-height: 300px; /* ou qualquer altura apropriada */
+  scroll-behavior: smooth;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #333 #111;
+
+  /* Chrome, Edge e Safari */
+}
+
+/* Estilização para Chrome, Edge e Safari */
+.terminal-output::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-output::-webkit-scrollbar-track {
+  background: #111;
+}
+
+.terminal-output::-webkit-scrollbar-thumb {
+  background-color: #333;
+  border-radius: 3px;
+}
+
+.terminal-output::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}

@@ -205,6 +205,8 @@ document.addEventListener("DOMContentLoaded", () => {
           deleteApplicationHandler(app.id, app.name)
         );
     });
+
+    setTimeout(setupScrollObservers, 0);
   }
 
   // MODIFICADO: renderSystems para usar estado persistente e innerHTML
@@ -782,96 +784,102 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Função Auxiliar para Atualizar UI do Card ---
   function updateCardUIState(card, systemId, state) {
     if (!card) {
-      // Tenta encontrar o card se não foi passado
+      // Tenta encontrar o card se não foi passado (ex: chamado por evento IPC)
       card = systemsList.querySelector(
         `.system-card[data-system-id="${systemId}"]`
       );
-      if (!card) return; // Sai se o card não existe mais
+    }
+    if (!card) {
+      // console.warn(`Renderer: Card ${systemId} não encontrado para atualizar UI para estado ${state}`);
+      return; // Sai se o card não existe mais
     }
 
     const startBtn = card.querySelector(".start-btn");
     const stopBtn = card.querySelector(".stop-btn");
-    const forceStopBtn = card.querySelector(".force-stop-btn");
+    const forceStopBtn = card.querySelector(".force-stop-btn"); // <<< Botão de Forçar Parada
     const deployBtn = card.querySelector(".deploy-btn");
     const editBtn = card.querySelector(".edit-sys-btn");
     const deleteBtn = card.querySelector(".delete-sys-btn");
     const statusIndicator = card.querySelector(".status-indicator");
     const deployIndicatorText = "Deploying..."; // Texto para botão de deploy
 
-    // Reset Geral
+    // --- Reset Geral (Esconde/Desabilita tudo por padrão antes de aplicar o estado) ---
     startBtn.hidden = true;
     startBtn.disabled = true;
     stopBtn.hidden = true;
     stopBtn.disabled = true;
-    forceStopBtn.hidden = true;
-    forceStopBtn.disabled = true;
+    forceStopBtn.hidden = false; // <<< NUNCA ESCONDE
+    forceStopBtn.disabled = false; // <<< Começa desabilitado por padrão
     if (deployBtn) {
       deployBtn.disabled = true;
-      deployBtn.textContent = "Deploy";
-    } // Reset texto deploy
+      deployBtn.textContent = "Deploy"; // Reset texto deploy
+    }
     if (editBtn) editBtn.disabled = true;
     if (deleteBtn) deleteBtn.disabled = true;
+    statusIndicator.className = "status-indicator"; // Reset classe base
+    statusIndicator.title = "Desconhecido";
 
+    // Aplica o estado específico
     switch (state) {
       case "stopped":
         systemIsRunning.set(systemId, false);
         startBtn.hidden = false;
         startBtn.disabled = false;
-        stopBtn.hidden = true; // Stop fica escondido quando parado
-        forceStopBtn.hidden = true; // Force Stop fica escondido quando parado
-        if (deployBtn) deployBtn.disabled = false;
+        // stopBtn permanece hidden/disabled (reset)
+        forceStopBtn.disabled = false; // <<< DESABILITADO quando parado
+        if (deployBtn) deployBtn.disabled = false; // Pode fazer deploy de algo parado
         if (editBtn) editBtn.disabled = false;
         if (deleteBtn) deleteBtn.disabled = false;
         statusIndicator.className = "status-indicator stopped";
         statusIndicator.title = "Parado";
         break;
+
       case "starting":
         systemIsRunning.set(systemId, true); // Assume que vai iniciar
-        startBtn.hidden = true; // Start some durante start/run
+        // startBtn permanece hidden/disabled (reset)
         stopBtn.hidden = false;
-        stopBtn.disabled = true; // Mostra Stop, mas desabilitado inicialmente
-        forceStopBtn.hidden = false;
-        forceStopBtn.disabled = true; // Mostra Force Stop, desabilitado inicialmente
+        stopBtn.disabled = false; // <<< Habilita Stop normal
+        forceStopBtn.disabled = false; // <<< HABILITADO durante start
         if (deployBtn) deployBtn.disabled = true;
         if (editBtn) editBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
         statusIndicator.className = "status-indicator starting";
         statusIndicator.title = "Iniciando...";
         break;
-      case "running": // Chamado pelo primeiro output ou se deploy termina e continua rodando
+
+      case "running":
         systemIsRunning.set(systemId, true);
-        startBtn.hidden = true; // Start some
+        // startBtn permanece hidden/disabled (reset)
         stopBtn.hidden = false;
-        stopBtn.disabled = false; // Habilita Stop
-        forceStopBtn.hidden = false;
-        forceStopBtn.disabled = false; // Habilita Force Stop
-        if (deployBtn) deployBtn.disabled = false; // Deploy pode ser possível enquanto roda
-        if (editBtn) editBtn.disabled = true; // Não pode editar rodando
-        if (deleteBtn) deleteBtn.disabled = true; // Não pode deletar rodando
+        stopBtn.disabled = false;
+        forceStopBtn.disabled = false; // <<< HABILITADO quando rodando
+        if (deployBtn) deployBtn.disabled = false; // Pode fazer deploy enquanto roda (se fizer sentido)
+        if (editBtn) editBtn.disabled = true;
+        if (deleteBtn) deleteBtn.disabled = true;
         statusIndicator.className = "status-indicator running";
         statusIndicator.title = "Rodando";
         break;
+
       case "stopping":
-        // Estado intermediário, geralmente isRunning ainda é true
-        startBtn.hidden = true; // Start some
+        // systemIsRunning ainda pode ser true aqui até confirmar parada
+        // startBtn permanece hidden/disabled (reset)
         stopBtn.hidden = false;
-        stopBtn.disabled = true; // Desabilita Stop durante parada
-        forceStopBtn.hidden = false;
-        forceStopBtn.disabled = true; // Desabilita Force Stop durante parada normal
+        stopBtn.disabled = true; // Desabilita Stop normal durante parada
+        forceStopBtn.disabled = false; // <<< HABILITADO durante stop (para forçar se travar)
         if (deployBtn) deployBtn.disabled = true;
         if (editBtn) editBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
         statusIndicator.className = "status-indicator stopping";
         statusIndicator.title = "Parando...";
         break;
+
       case "deploying":
-        // Geralmente isRunning é false, mas pode ser true se deploy acontece com app rodando
-        const isCurrentlyRunning = systemIsRunning.get(systemId) || false;
-        startBtn.hidden = true; // Start some
+        // Estado 'isRunning' não é modificado aqui, depende do processo start
+        // startBtn permanece hidden/disabled (reset)
+        const isCurrentlyRunning = systemIsRunning.get(systemId) || false; // Verifica estado do start
         stopBtn.hidden = !isCurrentlyRunning; // Mostra stop apenas se estava rodando
         stopBtn.disabled = true; // Desabilita durante deploy
-        forceStopBtn.hidden = !isCurrentlyRunning; // Mostra force stop apenas se estava rodando
-        forceStopBtn.disabled = true; // Desabilita durante deploy
+        forceStopBtn.disabled = true; // <<< DESABILITADO durante deploy (evitar ações conflitantes)
         if (deployBtn) {
           deployBtn.disabled = true;
           deployBtn.textContent = deployIndicatorText;
@@ -881,6 +889,14 @@ document.addEventListener("DOMContentLoaded", () => {
         statusIndicator.className = "status-indicator deploying";
         statusIndicator.title = "Deploying...";
         break;
+
+      default:
+        console.warn(
+          `Renderer: Estado desconhecido "${state}" para systemId ${systemId}`
+        );
+        // Aplica estado 'stopped' como fallback seguro
+        updateCardUIState(card, systemId, "stopped");
+        break;
     }
   }
 
@@ -888,18 +904,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // MODIFICADO: onSystemOutput para usar innerHTML, limitar histórico e gerenciar estado 'running'
   window.electronAPI.onSystemOutput(({ systemId, data, type }) => {
-    // Recebe objeto desestruturado
-    // Atualiza o histórico armazenado (que agora é HTML)
+    // Código existente para atualizar o histórico...
     let currentHistory = terminalOutputs.get(systemId) || "";
-    // Adiciona o chunk de HTML recebido (já formatado pelo main.js)
-    currentHistory += data; // Não adiciona <br> aqui, main.js controla isso com AnsiToHtml({newline:true})
+    currentHistory += data;
 
     // Limita o histórico para evitar consumo excessivo de memória
-    const MAX_OUTPUT_LENGTH = 30000; // Limite de caracteres (ajuste conforme necessário)
+    const MAX_OUTPUT_LENGTH = 30000;
     const truncationWarningHtml =
       '<span class="output-info">[...] Log anterior truncado [...]</span><br>';
     if (currentHistory.length > MAX_OUTPUT_LENGTH) {
-      // Adiciona aviso de truncamento se ainda não estiver lá
       const warningPresent = currentHistory.startsWith(truncationWarningHtml);
       currentHistory = currentHistory.substring(
         currentHistory.length - MAX_OUTPUT_LENGTH
@@ -919,59 +932,79 @@ document.addEventListener("DOMContentLoaded", () => {
         const terminalOutput = card.querySelector(".terminal-output");
         const statusIndicator = card.querySelector(".status-indicator");
 
-        // Se estava 'starting', muda para 'running' no primeiro output real
-        // (Mas não se for uma mensagem do debugger antes do app rodar)
-        // Melhoramos a lógica de 'running' um pouco
+        // Lógica existente para atualizar o status...
         if (statusIndicator && statusIndicator.classList.contains("starting")) {
-          // Verifica se a mensagem não é apenas do debugger antes do start real
           const isLikelyDebugMsg =
             data.includes("Debugger listening on") ||
             data.includes("For help, see:");
           if (!isLikelyDebugMsg) {
             updateCardUIState(card, systemId, "running");
           }
-        } else if (
-          statusIndicator &&
-          !statusIndicator.classList.contains("running") &&
-          !statusIndicator.classList.contains("stopping")
-        ) {
-          // Se não estava starting nem stopping, e recebeu output, provavelmente está rodando
-          // (Isso ajuda se o estado inicial foi perdido ou se o deploy terminou)
-          // Cuidado para não marcar como running se for só mensagem de erro/info final.
-          // Talvez a melhor abordagem seja o main process emitir um evento 'system-started' explícito.
-          // Por ora, mantemos a lógica baseada no output, mas cientes da limitação.
         }
 
-        // Atualiza o conteúdo do terminal visível com o histórico (limitado)
+        // Atualiza o conteúdo do terminal
         if (terminalOutput) {
-          terminalOutput.innerHTML = currentHistory; // Usa innerHTML
+          terminalOutput.innerHTML = currentHistory;
 
-          // --- INÍCIO: Correção Auto-Scroll ---
-          // Adia a rolagem para garantir que o scrollHeight foi atualizado após renderização
-          setTimeout(() => {
-            // Re-seleciona o elemento ou verifica se ainda existe
-            const currentTerminalElement =
-              card.querySelector(".terminal-output");
-            if (currentTerminalElement) {
-              // Verifica se o usuário não rolou manualmente para cima
-              // (Scroll somente se estiver perto do fim ou no fim)
-              const isScrolledToBottom =
-                currentTerminalElement.scrollHeight -
-                  currentTerminalElement.clientHeight <=
-                currentTerminalElement.scrollTop + 1; // Tolerância de 1px
+          // NOVA IMPLEMENTAÇÃO DE SCROLL - Mais robusta
+          // Método 1: Scroll imediato
+          terminalOutput.scrollTop = terminalOutput.scrollHeight;
 
-              // Rola incondicionalmente conforme solicitado ("últimos outputs fiquem sempre visíveis")
-              // if (isScrolledToBottom) { // Comentado para rolar sempre
-              currentTerminalElement.scrollTop =
-                currentTerminalElement.scrollHeight;
-              // }
+          // Método 2: Scroll no próximo frame de animação
+          requestAnimationFrame(() => {
+            // Re-seleciona elementos para garantir referências atualizadas
+            const currentCard = systemsList.querySelector(
+              `.system-card[data-system-id="${systemId}"]`
+            );
+            if (currentCard) {
+              const currentTerminal =
+                currentCard.querySelector(".terminal-output");
+              if (currentTerminal) {
+                currentTerminal.scrollTop = currentTerminal.scrollHeight;
+              }
             }
-          }, 0); // Timeout de 0ms é suficiente para adiar para o próximo ciclo de eventos
-          // --- FIM: Correção Auto-Scroll ---
+          });
+
+          // Método 3: Scroll após um pequeno delay
+          setTimeout(() => {
+            // Re-seleciona elementos para garantir referências atualizadas
+            const currentCard = systemsList.querySelector(
+              `.system-card[data-system-id="${systemId}"]`
+            );
+            if (currentCard) {
+              const currentTerminal =
+                currentCard.querySelector(".terminal-output");
+              if (currentTerminal) {
+                currentTerminal.scrollTop = currentTerminal.scrollHeight;
+              }
+            }
+          }, 0);
         }
       }
     }
   });
+
+  function setupScrollObservers() {
+    const terminals = document.querySelectorAll(".terminal-output");
+    terminals.forEach((terminal) => {
+      // Configura um MutationObserver para detectar mudanças no conteúdo
+      const observer = new MutationObserver(() => {
+        terminal.scrollTop = terminal.scrollHeight;
+
+        // Aplica scroll novamente após um pequeno delay
+        requestAnimationFrame(() => {
+          terminal.scrollTop = terminal.scrollHeight;
+        });
+      });
+
+      // Observa mudanças no conteúdo
+      observer.observe(terminal, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+    });
+  }
 
   // Funo auxiliar para atualizar UI para estado parado (usada por onSystemStopped e fallback de erro)
   function updateUIStopped(systemId) {
