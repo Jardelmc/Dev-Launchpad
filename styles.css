@@ -21,12 +21,23 @@
   --danger-color-hover: #c0392b;
   --info-color: #3498db; /* Blue for info */
   --warning-color: #f39c12; /* Orange for warning */
+
   --scrollbar-bg: #34495e;
   --scrollbar-thumb: #5d80a3;
+
   --input-bg: #3a536e;
   --input-border: #4a6886;
   --input-text: #ecf0f1;
   --placeholder-text: #7f8c8d;
+
+  /* Terminal Colors */
+  --terminal-default-fg: #cccccc; /* Default text */
+  --terminal-error-fg: #ff7b72; /* Softer red for stderr/errors */
+  --terminal-info-fg: #68a0f0; /* Softer blue for info */
+  --terminal-success-fg: #76d7c4; /* Teal/Green for success */
+  --terminal-warn-fg: #f39c12; /* Orange for warnings */
+  --terminal-debug-fg: #bca0f0; /* Purple for debug */
+  --terminal-bg: #1e2b37; /* Slightly darker terminal BG */
 }
 
 body {
@@ -46,11 +57,11 @@ body {
 
 /* View Management */
 .view {
-  display: none; /* Hidden by default */
-}
+  display: none;
+} /* Hidden by default */
 .view.active-view {
-  display: block; /* Show active view */
-}
+  display: block;
+} /* Show active view */
 
 .view-header {
   display: flex;
@@ -59,12 +70,20 @@ body {
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 15px; /* Space between items if wrapped */
 }
-
 .view-header h1 {
   color: var(--text-color);
   font-weight: 600;
   font-size: 1.8rem;
+  margin: 0; /* Remove default margin */
+}
+.view-header > div {
+  /* Target direct div children for alignment */
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .list-container {
@@ -99,26 +118,27 @@ button:disabled {
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
+  opacity: 0.6;
 }
 
 .primary-btn {
   background-color: var(--primary-color);
 }
-.primary-btn:hover {
+.primary-btn:hover:not(:disabled) {
   background-color: var(--primary-color-hover);
 }
 
 .secondary-btn {
   background-color: var(--secondary-color);
 }
-.secondary-btn:hover {
+.secondary-btn:hover:not(:disabled) {
   background-color: var(--secondary-color-hover);
 }
 
 .danger {
   background-color: var(--danger-color);
 }
-.danger:hover {
+.danger:hover:not(:disabled) {
   background-color: var(--danger-color-hover);
 }
 
@@ -130,17 +150,16 @@ button:disabled {
 .start-all {
   background-color: var(--warning-color);
 }
-.start-all:hover {
+.start-all:hover:not(:disabled) {
   background-color: #d68910;
 }
 
 /* Application List Styling */
-#applications-list {
+.applications-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
-
 .application-item {
   background-color: var(--bg-color-lighter);
   border-radius: 6px;
@@ -150,38 +169,48 @@ button:disabled {
   align-items: center;
   border: 1px solid var(--border-color);
   transition: background-color 0.2s ease;
+  flex-wrap: wrap; /* Allow wrapping actions */
+  gap: 10px;
 }
 .application-item:hover {
   background-color: var(--bg-color-lightest);
 }
-
+.app-item-info {
+  flex-grow: 1;
+  min-width: 200px;
+} /* Allow info to grow */
 .app-item-info h3 {
   margin-bottom: 5px;
   color: var(--text-color);
   font-size: 1.2rem;
 }
-.app-item-info .directory-path {
+.app-item-info .directory-path,
+.app-item-info .system-count {
   font-size: 0.85rem;
   color: var(--text-color-secondary);
   word-break: break-all;
+  display: block; /* Each on new line */
+  margin-top: 3px;
 }
 .app-item-info .dimmed {
   font-style: italic;
+  opacity: 0.7;
 }
-
 .app-item-actions {
   display: flex;
   gap: 10px;
-  flex-shrink: 0; /* Prevent actions from shrinking too much */
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 /* System Grid Styling */
 .systems-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  /* Adjust minmax for desired card width */
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
   gap: 25px;
 }
-
 .system-card {
   background-color: var(--bg-color-lighter);
   border-radius: 8px;
@@ -191,7 +220,6 @@ button:disabled {
   overflow: hidden; /* Important for containing terminal */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
-
 .system-card-header {
   padding: 15px 20px;
   background-color: var(--bg-color-lightest);
@@ -203,40 +231,49 @@ button:disabled {
   flex-wrap: wrap; /* Allow wrapping if needed */
   gap: 10px;
 }
-
 .system-info {
   flex-grow: 1; /* Allow info to take available space */
+  min-width: 150px;
 }
 .system-info h4 {
   font-size: 1.1rem;
   margin-bottom: 4px;
   color: var(--text-color);
+  word-break: break-word; /* Break long names */
+}
+.system-info h4 .debug-indicator {
+  /* Style for (Debug) text */
+  font-size: 0.8em;
+  color: var(--terminal-debug-fg); /* Use a debug color */
+  font-weight: bold;
+  margin-left: 5px;
 }
 .system-info .directory-path {
   font-size: 0.8rem;
   color: var(--text-color-secondary);
   word-break: break-all;
 }
-
 .system-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap; /* Allow buttons to wrap */
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent actions from shrinking too much */
+  align-items: center; /* Align buttons vertically */
 }
 
 .status-indicator {
   position: absolute;
-  top: 18px;
+  top: 18px; /* Adjust alignment */
   right: 20px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background-color: var(--secondary-color); /* Default: Unknown */
+  background-color: var(--secondary-color); /* Default: Unknown/Stopped */
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.2);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
+
 /* Status Colors */
 .status-indicator.starting,
 .status-indicator.deploying {
@@ -248,13 +285,13 @@ button:disabled {
   box-shadow: 0 0 8px var(--primary-color);
 }
 .status-indicator.stopped {
-  background-color: var(--danger-color);
+  background-color: var(--secondary-color); /* Gray for stopped */
+  box-shadow: none;
 }
 .status-indicator.stopping {
   background-color: var(--danger-color);
-  animation: pulse 1s infinite;
+  animation: pulse 1s infinite; /* Pulse animation for stopping */
 }
-
 @keyframes pulse {
   0% {
     opacity: 1;
@@ -268,41 +305,40 @@ button:disabled {
 }
 
 .system-card-body {
-  flex-grow: 1;
+  flex-grow: 1; /* Take remaining space */
   min-height: 200px; /* Ensure decent space for terminal */
   max-height: 400px; /* Limit terminal height */
   overflow-y: auto; /* Enable scrolling */
-  background-color: #1e2b37; /* Slightly darker terminal BG */
+  background-color: var(--terminal-bg);
   padding: 15px;
 }
-
 .terminal-output {
   font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
   font-size: 13px;
-  color: #cccccc; /* Lighter gray for default output */
-  white-space: pre-wrap;
-  word-break: break-word;
+  color: var(--terminal-default-fg); /* Default color from root */
+  white-space: pre-wrap; /* Wrap long lines */
+  word-break: break-word; /* Break long words */
   line-height: 1.5;
 }
 
-/* Terminal Output Colors */
-.output-stdout {
-  color: #cccccc;
-}
-.output-stderr {
-  color: #ff7b72;
-} /* Softer red for stderr */
-.output-info {
-  color: #68a0f0;
-} /* Softer blue for info */
-.output-error {
-  color: #ff7b72;
+/* Terminal Output Colors (Applied via spans from ansi-to-html or manual spans) */
+/* Default color is set on .terminal-output */
+.terminal-output .output-stderr, /* Classe para stderr explícito */
+.terminal-output span[style*="color:#ff7b72"], /* Cor de erro de ansi-to-html (exemplo) */
+.terminal-output .output-error /* Classe para erros manuais */ {
+  color: var(--terminal-error-fg);
   font-weight: bold;
 }
-.output-success {
-  color: #76d7c4;
+.terminal-output .output-info,
+.terminal-output span[style*="color:#68a0f0"] /* Cor de info de ansi-to-html (exemplo) */ {
+  color: var(--terminal-info-fg);
+}
+.terminal-output .output-success,
+.terminal-output span[style*="color:#76d7c4"] /* Cor de sucesso de ansi-to-html (exemplo) */ {
+  color: var(--terminal-success-fg);
   font-weight: bold;
-} /* Teal/Green for success */
+}
+/* Adicione mais estilos para outras cores ANSI se necessário */
 
 /* Scrollbar Styling (Webkit) */
 .system-card-body::-webkit-scrollbar {
@@ -319,7 +355,7 @@ button:disabled {
 }
 .system-card-body::-webkit-scrollbar-thumb:hover {
   background-color: #7ba0c3;
-}
+} /* Lighter thumb on hover */
 
 /* Modal Styling (Dark Theme) */
 .modal {
@@ -329,33 +365,28 @@ button:disabled {
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: auto; /* Enable scroll if needed */
   background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
   display: none; /* Hidden by default, shown by JS */
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.hidden {
-  display: none;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
 }
 .modal:not(.hidden) {
-  display: flex; /* Use flex when not hidden */
-}
+  display: flex;
+} /* Use flex when not hidden */
 
 .modal-content {
   background-color: var(--bg-color-lighter);
-  margin: auto;
+  margin: auto; /* Auto margin for centering */
   padding: 30px 40px;
   border: 1px solid var(--border-color);
-  width: 90%;
-  max-width: 650px;
+  width: 90%; /* Responsive width */
+  max-width: 650px; /* Max width */
   border-radius: 8px;
   position: relative;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   color: var(--text-color);
 }
-
 .close-btn {
   color: var(--text-color-secondary);
   position: absolute;
@@ -364,7 +395,7 @@ button:disabled {
   font-size: 32px;
   font-weight: bold;
   cursor: pointer;
-  line-height: 1;
+  line-height: 1; /* Better vertical alignment */
 }
 .close-btn:hover,
 .close-btn:focus {
@@ -375,7 +406,6 @@ button:disabled {
 .form-group {
   margin-bottom: 25px;
 }
-
 .form-group label {
   display: block;
   margin-bottom: 8px;
@@ -383,7 +413,6 @@ button:disabled {
   color: var(--text-color-secondary);
   font-size: 0.9rem;
 }
-
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="hidden"] {
@@ -405,12 +434,11 @@ button:disabled {
   border-color: var(--info-color);
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
 }
-.form-group input:read-only {
+.form-group input[readonly] {
   background-color: rgba(0, 0, 0, 0.1);
   cursor: default;
   opacity: 0.7;
 }
-
 .input-group {
   display: flex;
 }
@@ -423,17 +451,40 @@ button:disabled {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: -1px; /* Overlap border */
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
-
 .form-group small {
   font-size: 0.8rem;
   color: var(--text-color-secondary);
   margin-top: 6px;
   display: block;
 }
+
+/* Checkbox Group Styling */
+.checkbox-group {
+  display: flex;
+  align-items: center; /* Align checkbox and label */
+  flex-wrap: wrap; /* Allow small text to wrap */
+}
+.checkbox-group input[type="checkbox"] {
+  width: auto; /* Override default width */
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.checkbox-group label {
+  display: inline; /* Keep label beside checkbox */
+  margin-bottom: 0; /* Remove bottom margin */
+  font-weight: normal;
+  color: var(--text-color); /* Use regular text color */
+}
+.checkbox-group small {
+  margin-left: 25px; /* Indent helper text */
+  flex-basis: 100%; /* Force wrap if needed */
+  margin-top: 4px;
+}
+
 .feedback {
-  /* For directory selection */
+  /* For directory selection feedback */
   font-size: 0.85rem;
   margin-top: 5px;
   display: block;

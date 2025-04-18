@@ -20,32 +20,32 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // System CRUD (needs applicationId)
   addSystem: (applicationId, systemData) =>
-    ipcRenderer.invoke("add-system", { applicationId, systemData }),
+    ipcRenderer.invoke("add-system", applicationId, systemData),
   updateSystem: (applicationId, systemData) =>
-    ipcRenderer.invoke("update-system", { applicationId, systemData }),
+    ipcRenderer.invoke("update-system", applicationId, systemData),
   deleteSystem: (applicationId, systemId) =>
-    ipcRenderer.invoke("delete-system", { applicationId, systemId }),
+    ipcRenderer.invoke("delete-system", applicationId, systemId),
 
   // Process Control (needs applicationId for context, systemId for target)
+  // Passando como objeto para clareza
   startSystem: (applicationId, systemId) =>
     ipcRenderer.send("start-system", { applicationId, systemId }),
-  stopSystem: (systemId) => ipcRenderer.send("stop-system", { systemId }), // Stop only needs systemId
+  stopSystem: (systemId) => ipcRenderer.send("stop-system", { systemId }), // Só precisa do systemId
   deploySystem: (applicationId, systemId) =>
     ipcRenderer.send("deploy-system", { applicationId, systemId }),
   startAllSystems: (applicationId) =>
     ipcRenderer.send("start-all-systems", { applicationId }),
-  forceStopSystem: (
-    applicationId,
-    systemId // NOVO
-  ) => ipcRenderer.invoke("force-stop-system", { applicationId, systemId }),
+  forceStopSystem: (applicationId, systemId) =>
+    ipcRenderer.invoke("force-stop-system", { applicationId, systemId }), // NOVO
 
-  // Listeners for data from Main (all identify target by systemId)
+  // Listeners for data from Main (all identify target by systemId passed in event data)
+  // Os callbacks recebem (event, { systemId, data, type }) ou similar
   onSystemOutput: (callback) =>
-    ipcRenderer.on("system-output", (_event, value) => callback(value)),
+    ipcRenderer.on("system-output", (event, value) => callback(value)),
   onSystemStopped: (callback) =>
-    ipcRenderer.on("system-stopped", (_event, value) => callback(value)),
+    ipcRenderer.on("system-stopped", (event, value) => callback(value)),
   onSystemDeployed: (callback) =>
-    ipcRenderer.on("system-deployed", (_event, value) => callback(value)),
+    ipcRenderer.on("system-deployed", (event, value) => callback(value)),
 
   // Cleanup listeners
   removeListener: (channel) => ipcRenderer.removeAllListeners(channel),

@@ -4,15 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <title>Dev Launchpad v2</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="main-container">
-
-        <!-- View: Applications -->
+        <!-- View Applications -->
         <div id="applications-view" class="view active-view">
             <header class="view-header">
                 <h1>Aplicações</h1>
@@ -20,29 +19,33 @@
             </header>
             <div id="applications-list" class="list-container">
                 <!-- Application cards/items will be inserted here -->
-                <p class="empty-state">Nenhuma aplicação cadastrada. Clique em "Nova Aplicação".</p>
+                <p class="empty-state">Nenhuma aplicação cadastrada. Clique em Nova Aplicação.</p>
             </div>
         </div>
 
-        <!-- View: Systems -->
+        <!-- View Systems -->
         <div id="systems-view" class="view">
             <header class="view-header">
-                <button id="back-to-apps-btn" class="secondary-btn">&larr; Voltar</button>
-                <h1 id="systems-view-title">Sistemas de [Aplicação]</h1>
-                <div>
+                <div> <!-- Wrapper para alinhar botão de voltar e título -->
+                    <button id="back-to-apps-btn" class="secondary-btn">&larr; Voltar</button>
+                    <h1 id="systems-view-title" style="display: inline-block; margin-left: 15px;">Sistemas da Aplicação
+                    </h1>
+                </div>
+                <div> <!-- Wrapper para botões de ação -->
                     <button id="start-all-btn" class="action-btn start-all">Iniciar Todos</button>
                     <button id="add-system-btn" class="primary-btn">Novo Sistema</button>
                 </div>
             </header>
             <div id="systems-list" class="list-container systems-grid">
                 <!-- System cards will be inserted here -->
+                <!-- ... -->
                 <p class="empty-state">Nenhum sistema cadastrado para esta aplicação.</p>
             </div>
         </div>
 
     </div> <!-- End of main-container -->
 
-    <!-- Modal: Application Form -->
+    <!-- Modal Application Form -->
     <div id="application-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -50,11 +53,11 @@
             <form id="application-form">
                 <input type="hidden" id="application-id">
                 <div class="form-group">
-                    <label for="application-name">Nome da Aplicação:</label>
+                    <label for="application-name">Nome da Aplicação</label>
                     <input type="text" id="application-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="application-directory">Diretório Principal (Opcional):</label>
+                    <label for="application-directory">Diretório Principal (Opcional)</label>
                     <div class="input-group">
                         <input type="text" id="application-directory" readonly>
                         <button type="button" id="select-app-directory-btn">Selecionar</button>
@@ -69,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Modal: System Form -->
+    <!-- Modal System Form -->
     <div id="system-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -80,11 +83,11 @@
                 <input type="hidden" id="system-id">
 
                 <div class="form-group">
-                    <label for="system-name">Nome do Sistema:</label>
+                    <label for="system-name">Nome do Sistema</label>
                     <input type="text" id="system-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="system-directory">Diretório do Sistema:</label>
+                    <label for="system-directory">Diretório do Sistema</label>
                     <div class="input-group">
                         <input type="text" id="system-directory" readonly required>
                         <button type="button" id="select-sys-directory-btn">Selecionar</button>
@@ -92,18 +95,30 @@
                     <small id="sys-directory-feedback" class="feedback"></small>
                 </div>
                 <div class="form-group">
-                    <label for="system-port">Porta (Opcional):</label>
+                    <label for="system-port">Porta (Opcional)</label>
                     <input type="number" id="system-port" placeholder="ex: 3000">
-                    <small>Se definida, será usada no comando start (ex: PORT=3000 npm start)</small>
+                    <small>Se definida, será usada no comando start (ex: PORT=3000 npm run start)</small>
                 </div>
                 <div class="form-group">
-                    <label for="start-command">Comando de Start:</label>
+                    <label for="start-command">Comando de Start</label>
                     <input type="text" id="start-command" placeholder="ex: npm run start" required>
                 </div>
                 <div class="form-group">
-                    <label for="deploy-command">Comando de Deploy (Opcional):</label>
+                    <label for="deploy-command">Comando de Deploy (Opcional)</label>
                     <input type="text" id="deploy-command" placeholder="ex: vercel deploy --prod">
                 </div>
+
+                <!-- === INÍCIO: Checkbox Debug Mode === -->
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="system-debug-mode" style="margin-right: 8px; vertical-align: middle;">
+                    <label for="system-debug-mode"
+                        style="display: inline; font-weight: normal; color: var(--text-color);">Executar em modo Debug
+                        (adiciona --inspect)</label>
+                    <small style="margin-left: 25px; display: block;">Inicia o processo Node.js com a flag --inspect
+                        para permitir anexar um debugger. Afeta apenas o comando de Start.</small>
+                </div>
+                <!-- === FIM: Checkbox Debug Mode === -->
+
                 <div class="form-actions">
                     <button type="submit" class="primary-btn">Salvar Sistema</button>
                     <button type="button" class="secondary-btn cancel-modal-btn">Cancelar</button>

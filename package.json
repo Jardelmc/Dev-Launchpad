@@ -24,6 +24,7 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
+    "ansi-to-html": "^0.7.2",
     "fs-extra": "^11.2.0",
     "uuid": "^9.0.1"
   },
